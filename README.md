@@ -2,6 +2,8 @@
 
 Binary JET vs NO-JET classifier: 16 kHz mono → 5 s windows → log-mel (64 bands) → JetCNN (286k params) → sigmoid.
 Training: `train_esc50.py` (baseline) → `train_v1.py` → `train_v2.py` → `train_v3.py` (unified, best-ckpt on AP).
+v3 trains on GPU via `kaggle_train.ipynb` (or `colab_train.ipynb`); the notebooks save
+`v3_jet.pt` + `history_v3.csv` — copy both to the repo root afterwards.
 Benchmark: `bench.py` → `benchmarks.csv` + `bench.png`. Report: `make_pdf.py` → `benchmarks.pdf`.
 
 ## Results
@@ -54,6 +56,14 @@ python3 make_eval_figs.py          # figures/*.png + *.pdf + metrics_v2.json (v2
 python3 make_pdf.py                # rebuild benchmarks.pdf report
 ```
 
+### v3 on Kaggle/Colab GPU (not local CPU)
+
+1. Open `kaggle_train.ipynb` (attach the `gray8ed/...aerosonicdb` dataset, T4 GPU)
+   or `colab_train.ipynb` (upload `archive/` to Drive first). Run all.
+2. Download/copy to the repo root: `v3_jet.pt` + `history_v3.csv`.
+3. Run `python3 make_plots_hq.py` → renders `acc_v3.png` (with test-AP line);
+   `make_eval_figs.py` picks up v3 in `loss_curves` automatically.
+
 `bench.py` writes `benchmarks.csv` only; `bench.png` is rendered from it by
 `make_plots_hq.py` (single owner for the publication style). `figures/` holds
 PNG (220 dpi) + PDF for every diagnostic figure.
@@ -64,7 +74,8 @@ PNG (220 dpi) + PDF for every diagnostic figure.
   no confidence intervals are shown because n=8 cannot support them.
 - No validation loss was logged during training, so loss curves are
   train-only; use test-accuracy curves for generalization reads.
-- `history_v3.csv` was never saved, so there is no v3 learning curve.
+- `history_v3.csv` + `v3_jet.pt` come only from the Kaggle/Colab GPU run
+  (see above) — they are not in the repo, so there is no v3 curve yet.
 - F-16 scores are new in this run (clips arrived after the first benchmark).
 - Boom detection is out of scope for JetCNN (all ~0.00): transient head pending.
 

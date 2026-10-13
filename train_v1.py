@@ -89,7 +89,7 @@ def main():
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, args.epochs)
     fn = nn.BCEWithLogitsLoss(pos_weight=pw)
     Xt = torch.tensor(Xtr, dtype=torch.float32); yt = torch.tensor(ytr, dtype=torch.float32)
-    Xe = torch.tensor(Xte, dtype=torch.float32)
+    Xe = torch.tensor(Xte, dtype=torch.float32); Ye = torch.tensor(yte, dtype=torch.float32)
     print(f"device={device} lr={args.lr} pos_weight={pw.item():.2f}")
 
     best, best_ep, hist = 0, 0, []
@@ -105,13 +105,14 @@ def main():
         with torch.no_grad():
             pa = ((torch.sigmoid(model(Xt.to(device)))>0.5).cpu().numpy()==ytr).mean()
             pe = ((torch.sigmoid(model(Xe.to(device)))>0.5).cpu().numpy()==yte).mean()
-        hist.append((tot/len(Xt), pa, pe))
+            ve = fn(model(Xe.to(device)), Ye.to(device)).item()  # held-out loss
+        hist.append((tot/len(Xt), pa, pe, ve))
         flag = ""
         if pe > best:
             best, best_ep = pe, ep+1
             torch.save(model.state_dict(), DATA/"v1_jet.pt")
             flag = " <-- BEST saved"
-        print(f"epoch {ep+1}/{args.epochs} loss={tot/len(Xt):.4f} train={pa:.3f} test={pe:.3f}{flag}")
+        print(f"epoch {ep+1}/{args.epochs} loss={tot/len(Xt):.4f} val_loss={ve:.4f} train={pa:.3f} test={pe:.3f}{flag}")
     print(f"BEST test={best:.3f} at epoch {best_ep} -> v1_jet.pt")
 
     import matplotlib
@@ -119,8 +120,8 @@ def main():
     import matplotlib.pyplot as plt
     import csv as _csv
     with open(DATA/"history_v1.csv","w",newline="") as f:
-        w=_csv.writer(f); w.writerow(["epoch","loss","train_acc","test_acc"])
-        for i,(l,a,b) in enumerate(hist,1): w.writerow([i,round(l,4),round(float(a),4),round(float(b),4)])
+        w=_csv.writer(f); w.writerow(["epoch","loss","val_loss","train_acc","test_acc"])
+        for i,(l,a,b,v) in enumerate(hist,1): w.writerow([i,round(l,4),round(v,4),round(float(a),4),round(float(b),4)])
     ep = list(range(1,len(hist)+1))
     plt.figure(figsize=(9,5))
     plt.plot(ep,[h[1] for h in hist],"o-",label="train")

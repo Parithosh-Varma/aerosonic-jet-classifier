@@ -243,24 +243,38 @@ def fig_loss():
     import matplotlib.pyplot as plt
     viz.apply_theme()
     figure, ax = viz.fig("single")
-    for name, label, color in [("history_esc50.csv", "esc50 baseline", viz.GRAPHITE),
-                              ("history_v1.csv", "v1", viz.TEAL),
-                              ("history_v2.csv", "v2", viz.AMBER)]:
+    specs = [("history_esc50.csv", "esc50 baseline", viz.GRAPHITE),
+             ("history_v1.csv", "v1", viz.TEAL),
+             ("history_v2.csv", "v2", viz.AMBER),
+             ("history_v3.csv", "v3", "#7C3AED")]
+    any_val = False
+    for name, label, color in specs:
         p = DATA / name
         if not p.exists():
             print(f"  skip {name} (missing)")
             continue
-        ep, loss = [], []
         with open(p) as f:
-            for r in csv.DictReader(f):
+            reader = csv.DictReader(f)
+            has_val = "val_loss" in reader.fieldnames
+            ep, loss, val = [], [], [] if has_val else None
+            for r in reader:
                 ep.append(int(r["epoch"])); loss.append(float(r["loss"]))
+                if has_val:
+                    val.append(float(r["val_loss"]))
         ax.plot(ep, loss, "o-", color=color, lw=2.2, ms=5, mfc="white",
-                mew=1.8, label=label)
+                mew=1.8, label=f"{label} train")
+        if has_val:
+            any_val = True
+            ax.plot(ep, val, "s--", color=color, lw=1.6, ms=4, mfc="white",
+                    mew=1.5, alpha=0.9, label=f"{label} held-out")
     ax.set_xlabel("epoch", fontweight="bold")
-    ax.set_ylabel("train loss (BCE)", fontweight="bold")
+    ax.set_ylabel("loss (BCE)", fontweight="bold")
     viz.integer_x(ax)
     ax.legend(framealpha=0.95)
-    viz.title_block(ax, "Training loss curves",
+    viz.title_block(ax, "Training vs held-out loss",
+                    "Solid = train · dashed = held-out (logged by runs "
+                    "with val-loss support; older runs train-only)"
+                    if any_val else
                     "Train loss only — no validation loss was logged (see limitations)")
     return figure
 

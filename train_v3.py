@@ -111,7 +111,7 @@ def main():
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, args.epochs)
     fn = nn.BCEWithLogitsLoss(pos_weight=pw)
     Xt = torch.tensor(Xtr, dtype=torch.float32); yt = torch.tensor(ytr, dtype=torch.float32)
-    Xe = torch.tensor(Xte, dtype=torch.float32)
+    Xe = torch.tensor(Xte, dtype=torch.float32); Ye = torch.tensor(yte, dtype=torch.float32)
     print(f"device={device} lr={args.lr} pos_weight={pw.item():.2f}")
 
     best, best_ep, hist = -1, 0, []
@@ -130,13 +130,14 @@ def main():
             pa = ((ptr > 0.5) == ytr).mean()
             pe = ((pte > 0.5) == yte).mean()
             ap = average_precision_score(yte, pte)
-        hist.append((tot/len(Xt), pa, pe, ap))
+            ve = fn(model(Xe.to(device)), Ye.to(device)).item()  # held-out loss
+        hist.append((tot/len(Xt), pa, pe, ap, ve))
         flag = ""
         if ap > best:
             best, best_ep = ap, ep+1
             torch.save(model.state_dict(), DATA/"v3_jet.pt")
             flag = " <-- BEST saved"
-        print(f"epoch {ep+1}/{args.epochs} loss={tot/len(Xt):.4f} train={pa:.3f} test={pe:.3f} AP={ap:.4f}{flag}")
+        print(f"epoch {ep+1}/{args.epochs} loss={tot/len(Xt):.4f} val_loss={ve:.4f} train={pa:.3f} test={pe:.3f} AP={ap:.4f}{flag}")
     print(f"BEST AP={best:.4f} ep{best_ep} (theirs: CNN test 98.60 / env ~89) -> v3_jet.pt")
 
     import matplotlib
@@ -144,8 +145,8 @@ def main():
     import matplotlib.pyplot as plt
     import csv as _csv
     with open(DATA/"history_v3.csv", "w", newline="") as f:
-        w = _csv.writer(f); w.writerow(["epoch", "loss", "train_acc", "test_acc", "test_AP"])
-        for i, (l, a, b, c) in enumerate(hist, 1): w.writerow([i, round(l, 4), round(float(a), 4), round(float(b), 4), round(float(c), 4)])
+        w = _csv.writer(f); w.writerow(["epoch", "loss", "val_loss", "train_acc", "test_acc", "test_AP"])
+        for i, (l, a, b, c, v) in enumerate(hist, 1): w.writerow([i, round(l, 4), round(v, 4), round(float(a), 4), round(float(b), 4), round(float(c), 4)])
     ep = list(range(1, len(hist)+1))
     fig, ax = plt.subplots(figsize=(10, 5.5))
     ax.plot(ep, [h[1] for h in hist], "o-", label="train acc")

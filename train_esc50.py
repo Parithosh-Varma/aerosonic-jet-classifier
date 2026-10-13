@@ -66,7 +66,7 @@ def main():
     opt = torch.optim.Adam(model.parameters(), lr=1e-3)
     fn = nn.BCEWithLogitsLoss(pos_weight=pw)
     Xt = torch.tensor(Xtr, dtype=torch.float32); yt = torch.tensor(ytr, dtype=torch.float32)
-    Xe = torch.tensor(Xte, dtype=torch.float32)
+    Xe = torch.tensor(Xte, dtype=torch.float32); Ye = torch.tensor(yte, dtype=torch.float32)
     print(f"device={device} pos_weight={pw.item():.2f}")
     hist = []
     for ep in range(args.epochs):
@@ -80,8 +80,9 @@ def main():
         with torch.no_grad():
             pa=((torch.sigmoid(model(Xt.to(device)))>0.5).cpu().numpy()==ytr).mean()
             pe=((torch.sigmoid(model(Xe.to(device)))>0.5).cpu().numpy()==yte).mean()
-        print(f"epoch {ep+1}/{args.epochs} loss={tot/len(Xt):.4f} train_acc={pa:.3f} test_acc={pe:.3f}")
-        hist.append((tot/len(Xt), pa, pe))
+            ve=fn(model(Xe.to(device)), Ye.to(device)).item()  # held-out loss
+        print(f"epoch {ep+1}/{args.epochs} loss={tot/len(Xt):.4f} val_loss={ve:.4f} train_acc={pa:.3f} test_acc={pe:.3f}")
+        hist.append((tot/len(Xt), pa, pe, ve))
 
     torch.save(model.state_dict(), DATA/"esc50_jet.pt")
     print("saved:", DATA/"esc50_jet.pt")
@@ -92,8 +93,8 @@ def main():
     import matplotlib.pyplot as plt
     import csv as _csv
     with open(DATA/"history_esc50.csv","w",newline="") as f:
-        w=_csv.writer(f); w.writerow(["epoch","loss","train_acc","test_acc"])
-        for i,(l,a,b) in enumerate(hist,1): w.writerow([i,round(l,4),round(float(a),4),round(float(b),4)])
+        w=_csv.writer(f); w.writerow(["epoch","loss","val_loss","train_acc","test_acc"])
+        for i,(l,a,b,v) in enumerate(hist,1): w.writerow([i,round(l,4),round(v,4),round(float(a),4),round(float(b),4)])
     ep=list(range(1,len(hist)+1))
     plt.figure(figsize=(9,5))
     plt.plot(ep,[h[1] for h in hist],"o-",label="train acc")

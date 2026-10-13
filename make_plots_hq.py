@@ -24,17 +24,24 @@ viz.apply_theme()
 
 def read_hist(name):
     ep, loss, tr, te = [], [], [], []
+    ap = None
     with open(DATA / name) as f:
-        for r in csv.DictReader(f):
+        reader = csv.DictReader(f)
+        has_ap = "test_AP" in reader.fieldnames
+        if has_ap:
+            ap = []
+        for r in reader:
             ep.append(int(r["epoch"]))
             loss.append(float(r["loss"]))
             tr.append(float(r["train_acc"]))
             te.append(float(r["test_acc"]))
-    return ep, loss, tr, te
+            if has_ap:
+                ap.append(float(r["test_AP"]))
+    return ep, loss, tr, te, ap
 
 
 def acc_plot(csvname, out, title, sub):
-    ep, loss, tr, te = read_hist(csvname)
+    ep, loss, tr, te, ap = read_hist(csvname)
     best = max(te)
     be = ep[te.index(best)]
     figure, ax = viz.fig("wide")
@@ -44,6 +51,9 @@ def acc_plot(csvname, out, title, sub):
             mfc="white", mew=1.8, label="train acc", zorder=3)
     ax.plot(ep, te, "s-", color=SERIES_COLORS["test"], lw=2.4, ms=6,
             mfc="white", mew=1.8, label="test acc (held out)", zorder=3)
+    if ap is not None:
+        ax.plot(ep, ap, "^-", color=SERIES_COLORS["test_ap"], lw=2.2, ms=6,
+                mfc="white", mew=1.8, label="test AP", zorder=3)
     ax.axhline(best, color=viz.AMBER, ls=(0, (5, 4)), lw=1.6, alpha=0.9)
     ax.plot(be, best, "*", color=viz.AMBER, ms=15, mec="white", mew=1.1,
             zorder=4)
@@ -74,6 +84,12 @@ acc_plot("history_v1.csv", "acc_v1.png",
 acc_plot("history_v2.csv", "acc_v2.png",
          "v2 — accuracy vs epoch",
          "ESC-50 + ~864 YT jets · augmented · current best")
+if (DATA / "history_v3.csv").exists():
+    acc_plot("history_v3.csv", "acc_v3.png",
+             "v3 unified — accuracy vs epoch",
+             "aerosonic + YT + ESC · best checkpoint on test AP")
+else:
+    print("skip acc_v3.png (history_v3.csv missing — run python3 train_v3.py)")
 
 # ---- benchmark bars, driven by benchmarks.csv (never hardcoded) ----
 with open(DATA / "benchmarks.csv") as f:
