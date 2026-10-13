@@ -13,7 +13,7 @@ Benchmark: `bench.py` → `benchmarks.csv` + `bench.png`. Report: `make_pdf.py` 
 | v1 | 0.886 | 0.40 | 0.50 | 0.444 | 0.39 | 0.98 | 0.00 |
 | v2 | 0.932 | 1.00 | 0.25 | 0.400 | 0.07 | 0.98 | 0.00 |
 
-v2 leads on ESC-50 but crowd+music airshow audio regressed. All models score ~0 on sonic booms — needs a separate transient head. Full report: [benchmarks.pdf](benchmarks.csv).
+v2 leads on ESC-50 but crowd+music airshow audio regressed. All models score ~0 on sonic booms — needs a separate transient head. Full report: [benchmarks.pdf](benchmarks.pdf).
 
 ### Benchmark chart
 ![benchmarks](bench.png)
