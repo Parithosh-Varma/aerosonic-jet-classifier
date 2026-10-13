@@ -1,0 +1,11 @@
+{
+  "sample_rate": 16000,
+  "clip_seconds": 10,
+  "threshold_dbfs": -35.0,
+  "audio_device": ":0",
+  "pending_dir": "pending_review",
+  "jet_dir": "training_dataset/jet",
+  "nojet_dir": "training_dataset/no_jet",
+  "log_file": "review_log.csv",
+  "events_file": "events.csv"
+}

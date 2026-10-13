@@ -1,0 +1,140 @@
+Jet Engine Low-Flying Detection - Data Sources
+============================================
+Date: 2026-10-13
+Goal: Binary classification - JET vs NO-JET (low-flying)
+
+PRIMARY DATASET (Recommended for training)
+------------------------------------------
+1. AeroSonicDB 3K: Audio Dataset of Low-Flying Aircraft
+   - Zenodo: https://zenodo.org/records/12775560
+   - STATUS (2026-10-13): RESTRICTED - requires Zenodo access request / email aerosonicdb@gmail.com / Google Form https://forms.gle/5ymceso7H9bU8svAA
+   - Description: 3000+ low-flying aircraft events recorded near Adelaide Airport runway 05/23.
+     Triggered + labelled by ADS-B, human verified, trimmed to audible moments.
+     Includes silence/background class. Ideal for jet vs no-jet.
+   - Use: turbine-fan aeroplane = JET, silence/background = NO-JET
+   - API: https://zenodo.org/api/records/12775560
+
+2. AeroSonicDB (YPAD-0523) v1.1
+   - Zenodo: https://zenodo.org/records/8368882
+   - Description: 625 aircraft recordings (8.87h) + 3.52h silence + 6h urban soundscape with annotations.
+     4 subclasses: piston-prop, turbine-prop, turbine-fan (jet), rotorcraft.
+   - Use: subset or fallback if 3K too large
+
+3. AeroSonicDB (YPAD-0523) v0.3
+   - Zenodo: https://zenodo.org/records/8004108
+   - Description: 1890 clips, Aircraft (3.57h, 642x20s) vs Silence (3.37h, 1248x5/10s)
+   - GitHub helper: https://github.com/aerosonicdb/AeroSonicDB-YPAD0523
+   - Paper: https://arxiv.org/abs/2311.06368 (Downward & Nordby 2023)
+
+4. Kaggle mirror - Audio Dataset of Low-Flying Aircraft: AeroSonicDB
+   - URL: https://www.kaggle.com/datasets/gray8ed/audio-dataset-of-low-flying-aircraft-aerosonicdb
+   - Use: easier download if Zenodo slow, Kaggle API: kaggle datasets download
+
+SUPPLEMENTARY / NEGATIVES + PRETRAINING
+---------------------------------------
+5. AudioSet (Google) - ontology classes:
+   - Jet engine (758 clips): https://research.google.com/audioset/ontology/engine_1.html
+   - Aircraft engine (1155 clips), Fixed-wing aircraft/airplane (2985 clips)
+   - Download: https://research.google.com/audioset/download.html
+   - Raw-audio downloader: https://github.com/jim-schwoebel/download_audioset
+   - Use: extra JET positives + diverse negatives
+
+6. FSD50K (Freesound, AudioSet ontology, 51k clips, 200 classes)
+   - Info: http://labs.freesound.org/datasets/ / https://zenodo.org/record/4060432
+   - FSD Jet engine page (112 samples): https://fsannotator.upf.edu/fsd/explore/%252Fm%252F04229/
+   - Use: JET positives + urban negatives
+
+7. UrbanSound8K (8750 urban clips, <4s, 10 classes)
+   - Use: NOT-aircraft class for binary training (as in RPAS Detect-and-Avoid paper).
+     engine_idling, jackhammer, drilling, air_conditioner are hard negatives.
+   - Reference paper: https://www.mdpi.com/2079-9292/9/12/2076 (YAMNet vs VGGish for aircraft detection)
+
+EXAMPLE FREESOUND JET FLYBY SAMPLES (manual augmentation / testing)
+-------------------------------------------------------------------
+8. Fighter Jets Passing Overhead - Nice_Audio (44.1kHz, 0:29, Cumbria low-flying)
+   - https://freesound.org/people/Nice_Audio/sounds/420560/
+9. Close and Distant Jet Flybys - Yoyodaman234 (96kHz, 5:21, military jet x2)
+   - https://freesound.org/people/Yoyodaman234/sounds/667577/
+10. Jet Flyby Loud (F-16 Thunderbirds) - SorinDragon (48kHz)
+    - https://freesound.org/people/SorinDragon/sounds/473542/
+
+METHOD REFERENCES
+-----------------
+- Downward & Nordby 2023, AeroSonicDB paper: https://arxiv.org/abs/2311.06368
+- CNN jet model identification (Osaka/Narita, 98% acc): https://www.jstage.jst.go.jp/article/ast/40/6/40_E1913/_pdf/-char/en
+- Audio-based Detect-and-Avoid (YAMNet fine-tune): https://www.mdpi.com/2079-9292/9/12/2076
+
+PLANNED PREPROCESSING
+---------------------
+- Resample all to 16kHz mono, 5-10s windows
+- JET = turbine-fan aeroplane only; NO-JET = silence + background + urban
+- Features: log-mel spectrogram -> CNN / YAMNet fine-tune
+- Split: time/location disjoint (as AeroSonicDB does) to avoid leakage
+
+ADDED 2026-10-13 (fast / complementary)
+---------------------------------------
+11. ESC-50 - 2000x5s clips, 50 classes, incl. airplane (40), helicopter (40), engine
+    - https://github.com/karolpiczak/ESC-50 (tiny, fast, good for quick prototype + negatives)
+    - Use: airplane=JET-ish, helicopter/engine/train/storm=hard NO-JET
+12. VGGSound - 200k+ 10s YouTube clips, 310 classes, audio-visual verified
+    - https://www.robots.ox.ac.uk/~vgg/data/vggsound/ / https://huggingface.co/datasets/Loie/VGGSound
+    - Classes: airplane, airplane flyby (~964), helicopter, jet? Use for pretrain + extra JET
+    - Needs yt-dlp CSV download
+13. VibrationData free flyby mp3s (instant, tiny, real jets - best quick test)
+    - http://vibrationdata.com/audio.htm
+    - Blue_Angels_1/2.mp3 (F/A-18 flyover), IAI_Astra_Takeoff.mp3 (business jet), Yak.mp3, Apache.wav
+14. ERAU Uncrewed Aircraft YAMNet embeddings - 9108x1s, drone vs no-drone (no-drone incl. jets/cars/ambient)
+    - https://datacommons.erau.edu/datasets/5dmcszvym4
+    - Use: ready-made YAMNet features, 96% binary baseline with 2 dense layers
+15. DroneAudioDataset (Sara Al-Emadi, indoor drone + noise aug)
+    - https://github.com/saraalemadi/DroneAudioDataset
+    - Use: JET vs drone discrimination (propeller vs jet)
+16. UAV + speech outdoor (Zenodo 15190811, ~12GB across 18 zips, Mavic/Phantom/Yuneec)
+    - https://zenodo.org/records/15190811
+    - Use: drone negatives in wind/outdoor
+17. Battlefield Mic-1/Mic-2 (paper arXiv 2608.14287v1, 2026) - Jet 6012 samples/15h, Heli 2559, Prop 1797, Noise 125h
+    - Availability unclear (likely restricted) - reference architecture: ConvNeXt-Tiny + SED attention head
+18. DESED / DCASE Task4 (domestic SED, SINS+MUSAN+YouTube backgrounds)
+    - https://zenodo.org/records/3550599
+    - Use: background/NO-JET augmentation
+NOTE: Kaggle Military Aircraft Detection is IMAGES only - skipped (not audio).
+
+ACCESS CHECK 2026-10-13
+-----------------------
+- AeroSonicDB v1.1 audio.zip: 164M/1114M (15%), still downloading ~110KB/s
+- ESC-50: DONE (esc50_tmp/, 2000 wavs)
+- VibrationData: DONE (quick_jets/, 2 mp3s)
+- YouTube: The BEST Military Jet Flybys 2025 (45min compilation, military jets)
+  https://www.youtube.com/watch?v=nuGVI1pbON8 -> quick_jets/yt_flybys.wav DONE (459MB, 2727s)
+  -> yt_flybys_5s/ DONE (539x5s JET clips, 16kHz mono, intro skipped)
+- YouTube 2: Fighter Jet Flybys & Low Passes | Compilation (5min, 10. WORLD)
+  https://www.youtube.com/watch?v=-YAzblxigjs -> quick_jets/yt_flybys2.wav DONE (51MB, 302s)
+  -> yt_flybys2_5s/ DONE (37/58 pure-jet clips after 0.5 model filter; rest was commentary/music)
+- YouTube 3: F18 Hornet Sonic Boom (22s, NH Moto) - RARE transient class
+  https://www.youtube.com/watch?v=SOJ6yApmujg -> quick_jets/sonic_boom.wav DONE (3.7MB, boom at 19.2s)
+  -> sonic_booms/boom_f18_01.wav DONE (2s, centered). NOTE: current esc50 model scores 0.00 on boom - needs separate transient detector.
+- YouTube 4: Supersonic Shock: The Power of Fighter Jets! (346s compilation)
+  https://www.youtube.com/watch?v=jcZf6Enyu1E -> quick_jets/sonic_boom2.wav DONE (58MB)
+  -> sonic_booms/boom_comp2_00..14.wav DONE (15x2s bang candidates via peak-detect)
+- YouTube 5: F-35 sonic boom!!! (18s) https://www.youtube.com/watch?v=sHJE94Buyc8
+  -> sonic_booms/boom_f35_01.wav DONE. Booms total: 17
+- YouTube 6: B-1 Bomber flyby sets off car alarms (23s) https://www.youtube.com/watch?v=23Yu7vsAa_U
+  -> quick_jets/b1_flyby.wav DONE. Model tracks flyby perfectly (0.05->0.99->0.96->0.31->0.00)
+  -> yt_flybys_5s/b1_01,b1_02.wav DONE. JET clips total: 541
+- YouTube batch 2 (downloading): Flybys2022 (21min), BoomComp latest (6min), F-16 High Speed (30s), Abbotsford F-16 (4min)
+  DONE: yt_flybys3_5s/ 242 clips | abbotsford_5s/ 46 clips (thr 0.3, crowd-jets kept) | f16_5s/ 3 clips
+  | sonic_booms/boom_comp4_00..14 (15 new). TOTALS: 869 JET 5s + 32 booms
+- yt_auto.py harvester: 2 vids (Ultimate Low Flying Jets 8min, 10 Best Low Pass 3.5min) -> auto_5s/ 36 clips.
+  Manifest: combined_manifest.csv = 2937 files (940 JET / 1960 NOJET / 5 heldout / 32 BOOM). Zenodo dl STOPPED @909MB, awaiting user Kaggle file (verify-then-delete).
+- Kaggle archive VERIFIED (archive/: 1895 audio wavs + 6 env_audio 1h files, meta 470 turbofan/1270 silence) -> partial audio.zip DELETED.
+  Manifest now: 4677 files (1410 JET / 3230 NOJET / 5 heldout / 32 BOOM). v3/unified training unblocked.
+- DESED backgrounds DONE (desed_train/, 1009 wavs, domestic non-aircraft). DroneAudioDataset DONE (drone_audio/, 23408 wavs indoor+aug).
+  Manifest now: 29094 files (1410 JET / 27647 NOJET / 5 heldout / 32 BOOM). NOTE: drone dominates negs -> v3 caps 2500/class + sampling.
+- VGGSound: vggsound.csv DONE (199k rows; airplane 506 + flyby 964 + helicopter 1050).
+  Audio = 20 tars on HF (Loie/VGGSound, vggsound_00..19.tar.gz, multi-GB) OR yt-dlp 1470 IDs.
+  VERDICT: skip full pull now, targeted later.
+- ERAU YAMNet embeddings: page live, Download All button (needs login?), YAMNet via Kaggle models. Optional.
+- DroneAudioDataset GitHub: ~274MB, indoor drone. Optional pull.
+- DESED: training.tar.gz 512MB feasible, eval.tar.gz 5GB skip. Good background source if needed.
+- UAV outdoor Zenodo: ~12GB total, skip unless drone-negatives needed.
+- Battlefield Mic-1: paper only, no public link found - reference only.

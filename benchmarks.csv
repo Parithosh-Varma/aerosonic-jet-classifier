@@ -1,0 +1,5 @@
+model,esc_acc,esc_prec,esc_rec,esc_F1,BlueAngels F/A-18 (crowd),Astra takeoff,B-1 jet pass (5-10s),F-16 pass clip,F-18 sonic boom
+jet_cnn_synth.pt,0.909,0.0,0.0,0.0,0.0,0.0,0.0,n/a,0.0
+esc50_jet.pt,0.648,0.205,1.0,0.34,0.96,0.012,1.0,n/a,0.0
+v1_jet.pt,0.886,0.4,0.5,0.444,0.387,0.001,0.983,n/a,0.002
+v2_jet.pt,0.932,1.0,0.25,0.4,0.073,0.007,0.982,n/a,0.0

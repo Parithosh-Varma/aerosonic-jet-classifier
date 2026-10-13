@@ -1,0 +1,43 @@
+# Audio / dataset folders (local data only, not pushed)
+abbotsford_5s/
+auto_5s/
+desed_train/
+drone_audio/
+esc50_tmp/
+f16_5s/
+quick_jets/
+sonic_booms/
+training_dataset/
+yt_flybys_5s/
+yt_flybys2_5s/
+yt_flybys3_5s/
+aerosonic_ref/
+archive/
+pending_review/
+kaggle_kernel/
+training_dataset/
+review_log.csv
+
+# Large blobs
+*.wav
+*.mp3
+*.flac
+*.ogg
+*.zip
+*.pt
+*.pth
+*.ckpt
+*.onnx
+
+# Large manifests / scraped metadata
+vggsound.csv
+combined_manifest.csv
+archive.zip
+
+# Python / OS noise
+__pycache__/
+*.pyc
+*.log
+.DS_Store
+.venv/
+venv/
