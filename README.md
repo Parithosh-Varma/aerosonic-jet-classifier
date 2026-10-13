@@ -1,4 +1,32 @@
-# Jet Engine Noise — Capture & Review Pipeline
+# Aerosonic Jet Classifier — Jet Engine Low-Fly Detection
+
+Binary JET vs NO-JET classifier: 16 kHz mono → 5 s windows → log-mel (64 bands) → JetCNN (286k params) → sigmoid.
+Training: `train_esc50.py` (baseline) → `train_v1.py` → `train_v2.py` → `train_v3.py` (unified, best-ckpt on AP).
+Benchmark: `bench.py` → `benchmarks.csv` + `bench.png`. Report: `make_pdf.py` → `benchmarks.pdf`.
+
+## Results
+
+| model | ESC acc | prec | rec | F1 | BlueAngels | B-1 pass | boom |
+|---|---|---|---|---|---|---|---|
+| synth | 0.909 | 0.00 | 0.00 | 0.000 | 0.00 | 0.00 | 0.00 |
+| esc50 | 0.648 | 0.21 | 1.00 | 0.340 | 0.96 | 1.00 | 0.00 |
+| v1 | 0.886 | 0.40 | 0.50 | 0.444 | 0.39 | 0.98 | 0.00 |
+| v2 | 0.932 | 1.00 | 0.25 | 0.400 | 0.07 | 0.98 | 0.00 |
+
+v2 leads on ESC-50 but crowd+music airshow audio regressed. All models score ~0 on sonic booms — needs a separate transient head. Full report: [benchmarks.pdf](benchmarks.csv).
+
+### Benchmark chart
+![benchmarks](bench.png)
+
+### Learning curves
+![esc50 baseline](acc_vs_time.png)
+![v1](acc_v1.png)
+![v2](acc_v2.png)
+
+### Sample detection
+![sample jet_0261](sample_jet_0261.png)
+
+## Capture & Review Pipeline
 
 Folders (all in this directory):
 - `pending_review/` — recorder drops loud clips here; dashboard reads from here
