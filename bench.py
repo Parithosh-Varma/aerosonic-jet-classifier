@@ -3,7 +3,8 @@ Models: jet_cnn_synth, esc50_jet, v1_jet, v2_jet
 Tests:
   A) ESC-50 fold5 (8 jet + 95 neg) -> acc/prec/rec/F1
   B) Real-world clips (never trained): BlueAngels, Astra, B-1 flyby tracking, f16 clips, booms
-Saves: benchmarks.csv, bench.png
+Saves: benchmarks.csv (bench.png is rendered from it by make_plots_hq.py,
+which owns the publication figure style via viz.py).
 """
 import sys, csv, os
 from pathlib import Path
@@ -91,25 +92,7 @@ def main():
             w.writerow([name, round(acc,3), round(prec,3), round(rec,3), round(f1,3)] +
                        [round(det.get(k, -1),3) if isinstance(det.get(k),float) else det.get(k) for k in real_tests])
     print("saved benchmarks.csv")
-
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-    labels = [r[0].replace(".pt","") for r in rows_out]
-    x = np.arange(len(labels))
-    esc = [r[1] for r in rows_out]
-    ba = [r[5].get("BlueAngels F/A-18 (crowd)",0) for r in rows_out]
-    b1 = [r[5].get("B-1 jet pass (5-10s)",0) for r in rows_out]
-    w_ = 0.25
-    plt.figure(figsize=(10,5))
-    plt.bar(x-w_, esc, w_, label="ESC-fold5 acc")
-    plt.bar(x, ba, w_, label="BlueAngels prob")
-    plt.bar(x+w_, b1, w_, label="B-1 pass prob")
-    plt.xticks(x, labels, rotation=10); plt.ylim(0,1.05); plt.ylabel("score")
-    plt.title("Jet model benchmarks: ESC-50 vs real-world (higher=better; boom excluded=needs transient head)")
-    plt.legend(); plt.grid(True,axis="y",alpha=0.3); plt.tight_layout()
-    plt.savefig(DATA/"bench.png", dpi=110)
-    print("saved bench.png")
+    print("note: run python3 make_plots_hq.py to render bench.png from benchmarks.csv")
 
 if __name__ == "__main__":
     main()

@@ -117,10 +117,14 @@ with tab_review:
             y, sr = waveform(fpath)
             if y is not None:
                 import matplotlib.pyplot as plt
+                import numpy as np
+                dur = info.get("seconds", 0) or len(y) / (sr or 1)
+                t = np.linspace(0, dur, len(y))
                 fig, ax = plt.subplots(figsize=(8, 2))
-                ax.plot(y, linewidth=0.5)
+                ax.plot(t, y, linewidth=0.5)
                 ax.set_title("Waveform (normalized)")
-                ax.set_xlabel("samples (downsampled)")
+                ax.set_xlabel("time (s)")
+                ax.set_ylabel("amplitude")
                 st.pyplot(fig)
         except Exception as e:
             st.warning(f"Waveform unavailable: {e}")
